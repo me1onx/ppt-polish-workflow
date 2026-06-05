@@ -59,7 +59,7 @@
       item.className = "slide-item" + (slide.name === currentSlide ? " active" : "");
       item.dataset.name = slide.name;
       item.innerHTML = "<div>" + escapeHtml(slide.name) + "</div>" +
-        "<div class=\"slide-meta\">" + slide.annotation_count + " annotation(s)</div>";
+        "<div class=\"slide-meta\">" + slide.annotation_count + " 条批注</div>";
       item.addEventListener("click", function () { selectSlide(slide.name); });
       slideListEl.appendChild(item);
     });
@@ -93,7 +93,7 @@
     if (!currentAnnotations.length) {
       var empty = document.createElement("div");
       empty.className = "slide-meta";
-      empty.textContent = "No annotations yet";
+      empty.textContent = "暂无批注";
       annotationListEl.appendChild(empty);
       renderRegions();
       return;
@@ -103,11 +103,11 @@
       card.className = "annotation-card";
       var meta = document.createElement("div");
       meta.className = "slide-meta";
-      meta.textContent = ann.target && ann.target.type === "region" ? "Region" : "Whole slide";
+      meta.textContent = ann.target && ann.target.type === "region" ? "区域" : "整页";
       var text = document.createElement("p");
       text.textContent = ann.annotation;
       var del = document.createElement("button");
-      del.textContent = "Delete";
+      del.textContent = "删除";
       del.addEventListener("click", function () { deleteAnnotation(ann.id); });
       card.appendChild(meta);
       card.appendChild(text);
@@ -120,8 +120,8 @@
   function setSelectedRegion(region) {
     selectedRegion = region;
     targetText.textContent = region
-      ? "Region: x " + Math.round(region.x * 100) + "%, y " + Math.round(region.y * 100) + "%"
-      : "Whole slide";
+      ? "区域：x " + Math.round(region.x * 100) + "%，y " + Math.round(region.y * 100) + "%"
+      : "整页";
   }
 
   function clearDraftRect() {
@@ -140,12 +140,12 @@
       slideImage.src = data.image_url;
       slideWrap.classList.add("visible");
       emptyState.style.display = "none";
-      setStatus("Previewing " + name);
+      setStatus("正在预览 " + name);
       renderSlideList();
       renderAnnotations();
       updateNav();
     }).catch(function (err) {
-      setStatus("Failed to load slide: " + err.message);
+      setStatus("加载幻灯片失败：" + err.message);
     });
   }
 
@@ -153,7 +153,7 @@
     api("/api/slides").then(function (data) {
       slides = data.slides || [];
       if (!slides.length) {
-        setStatus("No slides found");
+        setStatus("未找到幻灯片");
         renderSlideList();
         updateNav();
         return;
@@ -162,7 +162,7 @@
       renderSlideList();
       selectSlide(target);
     }).catch(function (err) {
-      setStatus("Failed to load slides: " + err.message);
+      setStatus("加载幻灯片列表失败：" + err.message);
     });
   }
 
@@ -170,7 +170,7 @@
     if (!currentSlide) return;
     var text = annotationText.value.trim();
     if (!text) {
-      setStatus("Write an annotation first");
+      setStatus("请先填写批注内容");
       return;
     }
     addBtn.disabled = true;
@@ -186,9 +186,9 @@
       setSelectedRegion(null);
       clearDraftRect();
       loadSlides(true);
-      setStatus("Annotation added");
+      setStatus("批注已添加");
     }).catch(function (err) {
-      setStatus("Failed to add annotation: " + err.message);
+      setStatus("添加批注失败：" + err.message);
     }).finally(function () {
       addBtn.disabled = false;
     });
@@ -200,18 +200,18 @@
       method: "DELETE"
     }).then(function () {
       loadSlides(true);
-      setStatus("Annotation deleted");
+      setStatus("批注已删除");
     }).catch(function (err) {
-      setStatus("Failed to delete annotation: " + err.message);
+      setStatus("删除批注失败：" + err.message);
     });
   }
 
   function saveAll() {
     saveBtn.disabled = true;
     api("/api/save-all", { method: "POST" }).then(function (data) {
-      setStatus("Saved " + data.annotations_count + " annotation(s): " + data.path);
+      setStatus("已保存 " + data.annotations_count + " 条批注：" + data.path);
     }).catch(function (err) {
-      setStatus("Save failed: " + err.message);
+      setStatus("保存失败：" + err.message);
     }).finally(function () {
       saveBtn.disabled = false;
     });
@@ -223,9 +223,9 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ reason: "user-exit" })
     }).then(function () {
-      setStatus("Preview stopped. You can close this tab.");
+      setStatus("预览已停止，可以关闭此页面。");
     }).catch(function (err) {
-      setStatus("Shutdown failed: " + err.message);
+      setStatus("停止预览失败：" + err.message);
     });
   }
 
@@ -296,6 +296,6 @@
   api("/api/config").then(function () {
     loadSlides(false);
   }).catch(function (err) {
-    setStatus("Preview unavailable: " + err.message);
+    setStatus("预览不可用：" + err.message);
   });
 })();

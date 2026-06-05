@@ -3,50 +3,50 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PPT Polish Review</title>
+  <title>PPT 润色预览</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
   <aside class="sidebar">
     <div class="brand">
-      <div class="brand-title">PPT Polish Review</div>
-      <div class="brand-subtitle">Image pre-review</div>
+      <div class="brand-title">PPT 润色预览</div>
+      <div class="brand-subtitle">图片初稿批注</div>
     </div>
-    <div id="slide-list" class="slide-list" aria-label="Slides"></div>
+    <div id="slide-list" class="slide-list" aria-label="幻灯片列表"></div>
     <div class="sidebar-actions">
-      <button id="btn-save" class="primary">Save annotations</button>
-      <button id="btn-exit" class="secondary">Exit preview</button>
+      <button id="btn-save" class="primary">保存批注</button>
+      <button id="btn-exit" class="secondary">退出预览</button>
     </div>
   </aside>
 
   <main class="stage-shell">
     <header class="toolbar">
       <div class="nav">
-        <button id="nav-prev" title="Previous slide">‹</button>
+        <button id="nav-prev" title="上一页">‹</button>
         <span id="nav-counter">— / —</span>
-        <button id="nav-next" title="Next slide">›</button>
+        <button id="nav-next" title="下一页">›</button>
       </div>
-      <div id="status" class="status">Loading…</div>
+      <div id="status" class="status">正在加载...</div>
     </header>
 
     <section class="stage">
       <div id="slide-wrap" class="slide-wrap">
-        <img id="slide-image" alt="Selected slide">
+        <img id="slide-image" alt="当前幻灯片">
         <div id="region-layer" class="region-layer"></div>
       </div>
-      <div id="empty-state" class="empty-state">Select a slide to begin</div>
+      <div id="empty-state" class="empty-state">选择一页开始批注</div>
     </section>
   </main>
 
   <aside class="annotation-panel">
-    <h2>Annotations</h2>
+    <h2>批注</h2>
     <div class="target-box">
-      <div class="target-label">Target</div>
-      <div id="target-text">Whole slide</div>
-      <button id="btn-clear-region" class="link-button">Clear region</button>
+      <div class="target-label">批注目标</div>
+      <div id="target-text">整页</div>
+      <button id="btn-clear-region" class="link-button">清除区域</button>
     </div>
-    <textarea id="annotation-text" placeholder="Describe what should change on this slide or selected region…"></textarea>
-    <button id="btn-add" class="primary">Add annotation</button>
+    <textarea id="annotation-text" placeholder="描述这一页或选中区域需要如何修改..."></textarea>
+    <button id="btn-add" class="primary">添加批注</button>
     <div id="annotation-list" class="annotation-list"></div>
   </aside>
 
