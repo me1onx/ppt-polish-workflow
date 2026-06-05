@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PPT Polish Review</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-title">PPT Polish Review</div>
+      <div class="brand-subtitle">Image pre-review</div>
+    </div>
+    <div id="slide-list" class="slide-list" aria-label="Slides"></div>
+    <div class="sidebar-actions">
+      <button id="btn-save" class="primary">Save annotations</button>
+      <button id="btn-exit" class="secondary">Exit preview</button>
+    </div>
+  </aside>
+
+  <main class="stage-shell">
+    <header class="toolbar">
+      <div class="nav">
+        <button id="nav-prev" title="Previous slide">‹</button>
+        <span id="nav-counter">— / —</span>
+        <button id="nav-next" title="Next slide">›</button>
+      </div>
+      <div id="status" class="status">Loading…</div>
+    </header>
+
+    <section class="stage">
+      <div id="slide-wrap" class="slide-wrap">
+        <img id="slide-image" alt="Selected slide">
+        <div id="region-layer" class="region-layer"></div>
+      </div>
+      <div id="empty-state" class="empty-state">Select a slide to begin</div>
+    </section>
+  </main>
+
+  <aside class="annotation-panel">
+    <h2>Annotations</h2>
+    <div class="target-box">
+      <div class="target-label">Target</div>
+      <div id="target-text">Whole slide</div>
+      <button id="btn-clear-region" class="link-button">Clear region</button>
+    </div>
+    <textarea id="annotation-text" placeholder="Describe what should change on this slide or selected region…"></textarea>
+    <button id="btn-add" class="primary">Add annotation</button>
+    <div id="annotation-list" class="annotation-list"></div>
+  </aside>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

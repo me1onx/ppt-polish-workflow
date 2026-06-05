@@ -1,15 +1,17 @@
 ---
 name: ppt-polish-workflow
-description: "Orchestrate a personal PPT production workflow from a ChatGPT-generated presentation outline: use codex-ppt for the first image-based visual draft, use ppt-master live preview and annotations for review and polish, and only when the user explicitly selects pages, use image-to-editable-ppt to convert those pages into editable PPTX pages."
+description: "Orchestrate a personal PPT production workflow from a ChatGPT-generated presentation outline: use codex-ppt for the first image-based visual draft, use this skill's built-in image pre-review preview and annotations, and only when the user explicitly selects pages, use image-to-editable-ppt to convert those pages into editable PPTX pages."
 ---
 
 # PPT Polish Workflow
 
 ## Overview
 
-Use this skill as the coordinator for a staged PPT workflow. It does not replace `codex-ppt`, `ppt-master`, or `image-to-editable-ppt`; it decides when to invoke each one and keeps the handoff between draft, review, and editable reconstruction explicit.
+Use this skill as the coordinator for a staged PPT workflow. It does not replace `codex-ppt` or `image-to-editable-ppt`; it decides when to invoke them and keeps the handoff between draft, review, and editable reconstruction explicit.
 
 Default outcome: a polished visual PPT deck, with only user-selected pages converted to object-level editable PPTX when needed.
+
+Pre-review is handled by this skill's own lightweight image preview server. Do not call `ppt-master` for the normal pre-review stage.
 
 ## Mandatory Stop Gates
 
@@ -18,12 +20,12 @@ This skill is an interactive production workflow, not a one-shot PPT generator. 
 Stop and wait for user input at these gates:
 
 1. `outline-confirmed`: after normalizing the ChatGPT outline, before any slide image generation.
-2. `draft-review`: immediately after the first `codex-ppt` PPTX is assembled and the preview surface has been started or explicitly reported as unavailable.
+2. `draft-review`: immediately after the first `codex-ppt` PPTX is assembled and the built-in pre-review preview has been started or explicitly reported as unavailable.
 3. `review-changes`: after the user has previewed or described requested edits.
 4. `editable-page-selection`: after review changes are handled, before any `image-to-editable-ppt` work.
 5. `final-delivery`: only after the user says no more preview edits and either chooses editable pages or explicitly declines editable conversion.
 
-If the user asks "make/generate the PPT" without mentioning preview or editable pages, still stop at `draft-review`. The correct response is to provide the draft PPTX path, start `ppt-master` live preview when `svg_output/` or `origin_image/` is available, explain the preview/review status, and ask what to do next.
+If the user asks "make/generate the PPT" without mentioning preview or editable pages, still stop at `draft-review`. The correct response is to provide the draft PPTX path, start this skill's built-in review preview when `origin_image/slide_*.png` is available, explain the preview status, and ask what to do next.
 
 ## Required Inputs
 
@@ -59,50 +61,50 @@ Do not ask `codex-ppt` to produce object-level editable PowerPoint layouts. Its 
 Expected draft artifacts include:
 
 - `outline.md`
-- generated slide images under the deck project
+- generated slide images under `origin_image/`
 - `speech.md` or speaker notes when applicable
 - the initial `.pptx`
 
 Mandatory handoff after draft generation:
 
-- Verify the PPTX exists and the expected slide images exist.
-- Classify the draft for `ppt-master` handoff as `compatible-ppt-master-project`, `image-readonly-preview`, `review-reference-only`, or `rebuild-in-ppt-master`.
-- If the deck project has `svg_output/*.svg` or `origin_image/slide_*.png`, start `ppt-master` live preview immediately before stopping for user review.
-- Stop and tell the user: draft path, live preview URL if started, bridge classification, whether the preview is SVG direct-edit or image readonly, and that editable conversion has not started.
+- Verify the PPTX exists and the expected `origin_image/slide_*.png` files exist.
+- If `origin_image/slide_*.png` exists, start the built-in pre-review server:
+
+```bash
+python3 /Users/liuchengxi/.codex/skills/ppt-polish-workflow/scripts/review_preview/run_server.py <deck_project_path>
+```
+
+- Stop and tell the user: draft path, pre-review URL if started, that the preview is image-based/read-only, and that editable conversion has not started.
 - Ask the user for the next action: add preview annotations, request edits in chat, select pages for editable conversion, or accept the current draft as final.
 
 Do not continue from the first draft directly to final delivery.
 
-### 3. Review And Polish With `ppt-master`
+### 3. Pre-Review With Built-In Image Preview
 
-Use `ppt-master` for live preview and annotation-driven polish. It now supports both native SVG projects and read-only preview of `codex-ppt` image drafts that contain `origin_image/slide_*.png`.
+Use this skill's built-in preview server for live pre-review and annotation collection.
 
-Before using live preview, read:
+Before using preview, read:
 
 ```text
-/Users/liuchengxi/.codex/skills/ppt-master/SKILL.md
-/Users/liuchengxi/.codex/skills/ppt-master/workflows/live-preview.md
+/Users/liuchengxi/.codex/skills/ppt-polish-workflow/references/review-preview.md
 ```
 
-For bridge details, read `references/ppt-master-bridge.md`.
+The preview server reads `origin_image/slide_*.png`, serves the slides in a browser, and persists annotations to:
 
-In the review loop:
+```text
+<deck_project_path>/.ppt_polish_annotations.json
+```
 
-- Direct, deterministic edits such as wording, color, spacing, or simple coordinates can be applied directly in the preview workflow.
-- Annotation edits that require judgment should be collected, classified, and applied through the `ppt-master` annotation path.
-- Larger design changes should be routed back to a slide-level regeneration or reconstruction step instead of patched superficially.
+The preview is not object-level editing. It supports whole-slide and region annotations that the agent later classifies and applies through chat-guided edits, slide regeneration, or page-level editable reconstruction.
 
-If the draft is `review-reference-only`, do not skip the review gate. Show the user the draft path and explain that live editing is not direct because the draft is image-based. Offer review by screenshots/PPTX reference, chat-described edits, slide regeneration, or rebuilding in `ppt-master`.
-
-If the draft is `image-readonly-preview`, do not describe preview as unavailable. Start the live preview server against the `codex-ppt` deck project directory and tell the user that annotations apply to whole-slide raster previews.
+If `origin_image/` is unavailable, do not call `ppt-master` as a fallback for pre-review. Report the blocker and use screenshots, the PPTX itself, or regenerated slide images as review references.
 
 ### 4. Classify Requested Changes
 
-After each review pass, classify every requested change:
+After each review pass, read `.ppt_polish_annotations.json` when present and classify every requested change:
 
-- `direct-edit`: wording, color, alignment, spacing, or other deterministic local change.
-- `annotation-edit`: a localized change requiring AI judgment or layout adjustment.
-- `regenerate-slide`: a page whose visual concept, composition, or generated text is wrong enough to remake.
+- `direct-chat-edit`: wording, color, alignment, spacing, or deterministic local feedback that can be handled by chat-guided regeneration/edit instructions.
+- `regenerate-slide`: a page whose visual concept, composition, generated text, chart, or layout is wrong enough to remake.
 - `editable-page`: a page the user explicitly wants as object-level editable PPTX.
 
 Do not silently convert a page to editable PPTX only because it has many edits. Ask the user to confirm the page numbers for `editable-page` work.
@@ -122,16 +124,17 @@ If the user has not named pages, ask a direct decision question before final del
 At the end, report:
 
 - Final visual draft PPTX path.
-- Any `ppt-master` export path or annotation status.
+- Pre-review URL/status and `.ppt_polish_annotations.json` path if annotations were saved.
 - Any pages converted through `image-to-editable-ppt` and their output PPTX paths.
 - Which pages remain image-based and which pages are object-level editable.
 - Known limits such as generated-image text drift, pages not yet reviewed, or pages intentionally left image-based.
 
 ## Rules
 
-- Keep the three underlying skills separate; do not copy their detailed internal instructions into this skill.
+- Keep the underlying skills separate; do not copy their detailed internal instructions into this skill.
 - Treat `codex-ppt` output as image-based unless proven otherwise.
-- Treat `ppt-master` live preview as mandatory after draft generation whenever `svg_output/*.svg` or `origin_image/slide_*.png` exists.
+- Treat built-in image preview as mandatory after draft generation whenever `origin_image/slide_*.png` exists.
+- Do not call `ppt-master` for normal pre-review.
 - Treat `image-to-editable-ppt` as an opt-in page reconstruction stage.
 - Preserve user approval gates: outline approval, draft approval, review changes, and editable page selection.
 - Never skip the draft-review gate merely because a PPTX exists.
