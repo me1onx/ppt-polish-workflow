@@ -1,0 +1,5 @@
+interface:
+  display_name: "PPT Polish Workflow"
+  short_description: "PPT draft, preview, annotation, and editable-page workflow"
+  default_prompt: "Use $ppt-polish-workflow to turn my ChatGPT PPT outline into a polished reviewed deck."
+
